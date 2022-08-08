@@ -1,0 +1,122 @@
+---
+title: "Treehugging Study - Results"
+author: "Scott Claessens"
+date: "`r format(Sys.Date())`"
+output: html_document
+---
+
+```{r echo=FALSE}
+options(width = 100)
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+This document reports the results of multilevel models analysing the distribution of
+"treehugging" (i.e. valuing nature more than humans) around the world.
+
+We can plot this variable on a global map.
+
+```{r}
+tar_read(plot1)
+```
+
+# Intercept-only models
+
+First, we fit a standard random intercept multilevel model with treehugging as
+the outcome variable and random intercepts for countries and study waves.
+
+```{r}
+tar_read(m1.1)
+```
+
+We can get intra-class correlations for countries (`iso`) and study waves
+(`year`). The ICC for `year` is basically 0, meaning there is no variation in
+the outcome variable across study waves.
+
+```{r}
+tar_read(icc1.1a)
+```
+
+The ICC for `iso` is 0.06, meaning that 6% of the variation in treehugging is
+between countries.
+
+```{r}
+tar_read(icc1.1b)
+```
+
+These ICC results mean that in future models we should retain country-level
+random intercepts, but not study wave random intercepts.
+
+In an additional random intercept model, we can fit another model to determine 
+the proportion of country-level variance that can be explained by geographic and 
+cultural proximity.
+
+```{r}
+tar_read(m1.2)
+```
+
+We can then calculate the proportion of country-level variance explained by
+geographic and cultural proximity by calculating an ICC without including the
+residual variance (`sigma`).
+
+```{r}
+tar_read(icc1.2a)
+```
+
+```{r}
+tar_read(icc1.2b)
+```
+
+75% of the country-level variance can be explained by geographic proximity,
+while 15% can be explained by linguistic proximity. The additional 10% is
+explained by neither.
+
+# Human Development Index (HDI)
+
+We then fit a model that includes HDI as a standardised country-level predictor,
+controlling for individual-level demographics. The outcome variable `Treehugging`
+is left on the raw data scale (min = -5, max = 5).
+
+```{r}
+tar_read(m2.1)
+```
+
+There is a small positive effect of HDI. As HDI increases by one standard deviation,
+the outcome variable increases by 0.08. We can visualise this effect.
+
+```{r warning=FALSE}
+tar_read(plot2)
+```
+
+Does this effect hold when controlling for geographic and cultural proximity
+between countries?
+
+```{r}
+tar_read(m2.2)
+```
+
+Yes, it does.
+
+# Environmental Performance Index (EPI)
+
+We also fit a model that includes EPI as a standardised country-level predictor,
+controlling for individual-level demographics.
+
+```{r}
+tar_read(m3.1)
+```
+
+There is a similar small positive effect of EPI. As EPI increases by one standard
+deviation, the outcome variable increases by 0.11. We can visualise this effect.
+
+```{r warning=FALSE}
+tar_read(plot3)
+```
+
+Does this effect hold when controlling for geographic and cultural proximity?
+
+```{r}
+tar_read(m3.2)
+```
+
+The 95% credible interval for the slope now includes zero. But the majority of
+the posterior remains positive, suggesting that the effect holds.
