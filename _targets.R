@@ -2,8 +2,15 @@ library(tidyverse)
 library(targets)
 library(tarchetypes)
 source("R/functions.R")
-tar_option_set(packages = c("brms", "ggrepel", "readxl", "rnaturalearth", 
-                            "rnaturalearthdata", "rmapshaper"))
+tar_option_set(
+  packages = c("brms", "ggrepel", "readxl", "tidyverse", "rnaturalearth", 
+               "rnaturalearthdata", "rmapshaper"),
+  deployment = "main"
+)
+options(
+  clustermq.scheduler = "slurm", 
+  clustermq.template = "slurm_clustermq.tmpl"
+)
 # full workflow
 list(
   # files
@@ -16,16 +23,15 @@ list(
   # load covariance matrices
   tar_target(geoCov, loadCovMat(fileGeo, d, log = TRUE)),
   tar_target(linCov, loadCovMat(fileLin, d, log = FALSE)),
-  # fit treehugging models
   # 1. intercept-only models
-  tar_target(m1.1, fitModel1.1(d)),
-  tar_target(m1.2, fitModel1.2(d, geoCov, linCov)),
+  tar_target(m1.1, fitModel1.1(d), deployment = "worker"),
+  tar_target(m1.2, fitModel1.2(d, geoCov, linCov), deployment = "worker"),
   # 2. HDI
-  tar_target(m2.1, fitModel2.1(d)),
-  tar_target(m2.2, fitModel2.2(d, geoCov, linCov)),
+  tar_target(m2.1, fitModel2.1(d), deployment = "worker"),
+  tar_target(m2.2, fitModel2.2(d, geoCov, linCov), deployment = "worker"),
   # 3. EPI
-  tar_target(m3.1, fitModel3.1(d)),
-  tar_target(m3.2, fitModel3.2(d, geoCov, linCov)),
+  tar_target(m3.1, fitModel3.1(d), deployment = "worker"),
+  tar_target(m3.2, fitModel3.2(d, geoCov, linCov), deployment = "worker"),
   # plots
   tar_target(plot1, plotWorldMap(d)),
   tar_target(plot2, plotCondEffects(m2.1, d, effects = "HDI.std", file = "plots/resultsHDI.pdf")),

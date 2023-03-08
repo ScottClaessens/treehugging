@@ -17,7 +17,7 @@ loadData <- function(fileDat, fileISO) {
     # add ISO codes
     left_join(read.csv(fileISO), by = "country") %>%
     # copy columns
-    mutate(isoGeo = iso, isoLin = iso)
+    mutate(isoGeo = iso, isoLin = iso, isoRel = iso)
 }
 
 # load covariance matrices
@@ -38,7 +38,6 @@ loadCovMat <- function(file, d, log) {
   # subset matrix
   out <- out[rownames(out)[rownames(out) %in% d$iso],
              colnames(out)[colnames(out) %in% d$iso]]
-  # fit model
   return(out)
 }
 
@@ -111,6 +110,29 @@ fitModel1.2 <- function(d, geoCov, linCov) {
   )
 }
 
+# fit model 1.3
+fitModel1.3 <- function(d, geoCov, relCov) {
+  brm(
+    # model formula
+    Treehugging ~ 1 + (1 | gr(isoGeo, cov = geoCov)) + (1 | gr(isoRel, cov = relCov)) + (1 | iso),
+    # data (without hong kong or palestine)
+    data = d %>% filter(!(iso %in% c("HK","PS"))), 
+    data2 = list(geoCov = geoCov, relCov = relCov),
+    # priors (from prior predictive simulation)
+    prior = c(prior(normal(0, 0.5), class = Intercept),
+              prior(exponential(4), class = sd),
+              prior(exponential(4), class = sigma)),
+    # number of iterations
+    iter = 4000,
+    # number of cores
+    cores = 4,
+    # seed
+    seed = 2113,
+    # control arguments
+    control = list(adapt_delta = 0.99, max_treedepth = 12)
+  )
+}
+
 # fit model 2.1
 fitModel2.1 <- function(d) {
   brm(
@@ -156,6 +178,30 @@ fitModel2.2 <- function(d, geoCov, linCov) {
   )
 }
 
+# fit model 2.3
+fitModel2.3 <- function(d, geoCov, relCov) {
+  brm(
+    # model formula
+    Treehugging ~ 1 + HDI.std + Gender + Age.std + RelAttend.std + LeftRight.std + Income.std +
+      (1 + Gender + Age.std + RelAttend.std + LeftRight.std + Income.std | iso) +
+      (1 | gr(isoGeo, cov = geoCov)) + (1 | gr(isoRel, cov = relCov)),
+    # data (without hong kong or palestine)
+    data = d %>% filter(!(iso %in% c("HK","PS"))), 
+    data2 = list(geoCov = geoCov, relCov = relCov),
+    # priors (from prior predictive simulation)
+    prior = c(prior(normal(0, 0.5), class = Intercept),
+              prior(normal(0, 0.5), class = b),
+              prior(exponential(4), class = sd),
+              prior(exponential(4), class = sigma)),
+    # number of iterations
+    iter = 4000,
+    # number of cores
+    cores = 4,
+    # seed
+    seed = 2113
+  )
+}
+
 # fit model 3.1
 fitModel3.1 <- function(d) {
   brm(
@@ -187,6 +233,30 @@ fitModel3.2 <- function(d, geoCov, linCov) {
       (1 | gr(isoGeo, cov = geoCov)) + (1 | gr(isoLin, cov = linCov)),
     # data
     data = d, data2 = list(geoCov = geoCov, linCov = linCov),
+    # priors (from prior predictive simulation)
+    prior = c(prior(normal(0, 0.5), class = Intercept),
+              prior(normal(0, 0.5), class = b),
+              prior(exponential(4), class = sd),
+              prior(exponential(4), class = sigma)),
+    # number of iterations
+    iter = 4000,
+    # number of cores
+    cores = 4,
+    # seed
+    seed = 2113
+  )
+}
+
+# fit model 3.3
+fitModel3.3 <- function(d, geoCov, relCov) {
+  brm(
+    # model formula
+    Treehugging ~ 1 + EPI.std + Gender + Age.std + RelAttend.std + LeftRight.std + Income.std +
+      (1 + Gender + Age.std + RelAttend.std + LeftRight.std + Income.std | iso) +
+      (1 | gr(isoGeo, cov = geoCov)) + (1 | gr(isoRel, cov = relCov)),
+    # data (without hong kong or palestine)
+    data = d %>% filter(!(iso %in% c("HK","PS"))), 
+    data2 = list(geoCov = geoCov, relCov = relCov),
     # priors (from prior predictive simulation)
     prior = c(prior(normal(0, 0.5), class = Intercept),
               prior(normal(0, 0.5), class = b),
